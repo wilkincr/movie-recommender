@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package movie;
+
+option go_package = "movie-recommender/go-client/pb;pb";
+
+service EmbeddingService {
+  // Generates an embedding and adds it to the vector database.
+  rpc GetMovieEmbedding(MovieRequest) returns (EmbeddingResponse);
+  
+  // Adds a movie embedding to the vector database.
+  rpc AddMovieEmbedding(AddMovieRequest) returns (AddMovieResponse);
+}
+
+// Request to generate an embedding.
+message MovieRequest {
+  int32 movie_id = 1;
+  string title = 2;
+  string overview = 3;
+  string keywords = 4;
+}
+
+// Response containing the embedding.
+message EmbeddingResponse {
+  repeated float embedding = 1;
+}
+
+// Request to add an embedding (if you want to separate this functionality).
+message AddMovieRequest {
+  int32 movie_id = 1;
+  repeated float embedding = 2;
+}
+
+// A simple response for the add operation.
+message AddMovieResponse {
+  string message = 1;
+}

@@ -3,7 +3,7 @@
 import grpc
 import warnings
 
-import movie_pb2 as movie__pb2
+from proto import movie_pb2 as proto_dot_movie__pb2
 
 GRPC_GENERATED_VERSION = '1.70.0'
 GRPC_VERSION = grpc.__version__
@@ -18,7 +18,7 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + f' but the generated code in movie_pb2_grpc.py depends on'
+        + f' but the generated code in proto/movie_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
@@ -26,8 +26,7 @@ if _version_not_supported:
 
 
 class EmbeddingServiceStub(object):
-    """The movie embedding service definition.
-    """
+    """Missing associated documentation comment in .proto file."""
 
     def __init__(self, channel):
         """Constructor.
@@ -37,17 +36,28 @@ class EmbeddingServiceStub(object):
         """
         self.GetMovieEmbedding = channel.unary_unary(
                 '/movie.EmbeddingService/GetMovieEmbedding',
-                request_serializer=movie__pb2.MovieRequest.SerializeToString,
-                response_deserializer=movie__pb2.EmbeddingResponse.FromString,
+                request_serializer=proto_dot_movie__pb2.MovieRequest.SerializeToString,
+                response_deserializer=proto_dot_movie__pb2.EmbeddingResponse.FromString,
+                _registered_method=True)
+        self.AddMovieEmbedding = channel.unary_unary(
+                '/movie.EmbeddingService/AddMovieEmbedding',
+                request_serializer=proto_dot_movie__pb2.AddMovieRequest.SerializeToString,
+                response_deserializer=proto_dot_movie__pb2.AddMovieResponse.FromString,
                 _registered_method=True)
 
 
 class EmbeddingServiceServicer(object):
-    """The movie embedding service definition.
-    """
+    """Missing associated documentation comment in .proto file."""
 
     def GetMovieEmbedding(self, request, context):
-        """Unary call: Given a movie title and overview, return its embedding.
+        """Generates an embedding and adds it to the vector database.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def AddMovieEmbedding(self, request, context):
+        """Adds a movie embedding to the vector database.
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -58,8 +68,13 @@ def add_EmbeddingServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'GetMovieEmbedding': grpc.unary_unary_rpc_method_handler(
                     servicer.GetMovieEmbedding,
-                    request_deserializer=movie__pb2.MovieRequest.FromString,
-                    response_serializer=movie__pb2.EmbeddingResponse.SerializeToString,
+                    request_deserializer=proto_dot_movie__pb2.MovieRequest.FromString,
+                    response_serializer=proto_dot_movie__pb2.EmbeddingResponse.SerializeToString,
+            ),
+            'AddMovieEmbedding': grpc.unary_unary_rpc_method_handler(
+                    servicer.AddMovieEmbedding,
+                    request_deserializer=proto_dot_movie__pb2.AddMovieRequest.FromString,
+                    response_serializer=proto_dot_movie__pb2.AddMovieResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -70,8 +85,7 @@ def add_EmbeddingServiceServicer_to_server(servicer, server):
 
  # This class is part of an EXPERIMENTAL API.
 class EmbeddingService(object):
-    """The movie embedding service definition.
-    """
+    """Missing associated documentation comment in .proto file."""
 
     @staticmethod
     def GetMovieEmbedding(request,
@@ -88,8 +102,35 @@ class EmbeddingService(object):
             request,
             target,
             '/movie.EmbeddingService/GetMovieEmbedding',
-            movie__pb2.MovieRequest.SerializeToString,
-            movie__pb2.EmbeddingResponse.FromString,
+            proto_dot_movie__pb2.MovieRequest.SerializeToString,
+            proto_dot_movie__pb2.EmbeddingResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def AddMovieEmbedding(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/movie.EmbeddingService/AddMovieEmbedding',
+            proto_dot_movie__pb2.AddMovieRequest.SerializeToString,
+            proto_dot_movie__pb2.AddMovieResponse.FromString,
             options,
             channel_credentials,
             insecure,
