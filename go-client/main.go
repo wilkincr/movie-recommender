@@ -3,18 +3,20 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"log"
 	pb "movie-recommender/go-client/pb/proto"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 
 	"google.golang.org/grpc"
 )
 
-const apiKey = "c5baf44cf7c6de22b5d2e5c09cfbb255"
+var apiKey = os.Getenv("TMDB_API_KEY")
 
 type Keyword struct {
 	ID      int    `json:"id"`
@@ -190,6 +192,42 @@ func getTopRatedMovies() ([]int, error) {
 	return allMovieIDs, nil
 }
 
+func buildIndex(client pb.EmbeddingServiceClient) error {
+	var allMovieIDs []int
+	allMovieIDs, err := getTopRatedMovies()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Now print out all collected movie IDs.
+	fmt.Println("Collected Top Rated Movie IDs:")
+
+	for _, movie_id := range allMovieIDs {
+		movie, err := getMovieInfo(movie_id)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		req := &pb.MovieRequest{
+			MovieId:  int32(movie_id),
+			Title:    movie.Title,
+			Overview: movie.Overview,
+			Keywords: movie.Keywords,
+		}
+
+		log.Printf("Sending MovieRequest: MovieId=%d, Title=%q, Overview=%q, Keywords=%q",
+			req.MovieId, req.Title, req.Overview, req.Keywords)
+
+		_, err = client.GetMovieEmbedding(context.Background(), req)
+
+		if err != nil {
+			log.Fatalf("Error calling gRPC: %v", err)
+		}
+	}
+	return nil
+}
+
 func main() {
 
 	movie_id, err := getMovieID("Dune")
@@ -209,55 +247,41 @@ func main() {
 	fmt.Printf("Overview: %s\n", movie.Overview)
 	fmt.Printf("Keywords: %s\n", movie.Keywords)
 
-	var allMovieIDs []int
-	allMovieIDs, err = getTopRatedMovies()
-
-	if err != nil {
-		log.Fatal(err)
-	}
-	// Now print out all collected movie IDs.
-	fmt.Println("Collected Top Rated Movie IDs:")
-
 	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("Failed to connect to gRPC server: %v", err)
 	}
 	defer conn.Close()
-	client := pb.NewEmbeddingServiceClient(conn)
-	for _, movie_id := range allMovieIDs {
-		movie, err = getMovieInfo(movie_id)
 
+	client := pb.NewEmbeddingServiceClient(conn)
+
+	// Build the index
+	buildFlag := flag.Bool("build", false, "Build the index")
+	flag.Parse()
+
+	if *buildFlag {
+		err = buildIndex(client)
 		if err != nil {
 			log.Fatal(err)
 		}
-
-		req := &pb.MovieRequest{
-			MovieId:  int32(movie_id),
-			Title:    movie.Title,
-			Overview: movie.Overview,
-			Keywords: movie.Keywords,
-		}
-
-		log.Printf("Sending MovieRequest: MovieId=%d, Title=%q, Overview=%q, Keywords=%q",
-			req.MovieId, req.Title, req.Overview, req.Keywords)
-
-		embeddingResponse, err := client.GetMovieEmbedding(context.Background(), req)
-
-		if err != nil {
-			log.Fatalf("Error calling gRPC: %v", err)
-		}
-
-		log.Printf("Received embedding: %v", embeddingResponse.Embedding)
-
-		// _, err = client.AddMovieEmbedding(context.Background(), &pb.AddMovieRequest{
-		// 	MovieId:   int32(movie_id),
-		// 	Embedding: embeddingResponse.Embedding,
-		// })
-		// if err != nil {
-		// 	log.Fatalf("Error adding movie %d to vector database: %v", movie_id, err)
-		// }
-		// log.Printf("Movie %d added to vector database.", movie_id)
 	}
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	similarResp, err := client.GetSimilarMovie(context.Background(), &pb.SimilarMovieRequest{
+		MovieId: int32(157336), // set queryMovieID to the desired movie ID
+	})
+	if err != nil {
+		log.Fatalf("Error calling GetSimilarMovie: %v", err)
+	}
+	movie, err = getMovieInfo(int(similarResp.MovieId))
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Printf("Most similar movie to %d is %d: %s", movie.Title, similarResp.MovieId, movie.Title)
 
 	// Optionally, if your service requires an explicit insertion into the vector database,
 	// 	you might call an AddMovieEmbedding RPC here. For example:
