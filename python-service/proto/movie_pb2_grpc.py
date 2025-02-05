@@ -26,7 +26,8 @@ if _version_not_supported:
 
 
 class EmbeddingServiceStub(object):
-    """Missing associated documentation comment in .proto file."""
+    """The service for movie embedding operations.
+    """
 
     def __init__(self, channel):
         """Constructor.
@@ -44,10 +45,21 @@ class EmbeddingServiceStub(object):
                 request_serializer=proto_dot_movie__pb2.AddMovieRequest.SerializeToString,
                 response_deserializer=proto_dot_movie__pb2.AddMovieResponse.FromString,
                 _registered_method=True)
+        self.GetSimilarMovie = channel.unary_unary(
+                '/movie.EmbeddingService/GetSimilarMovie',
+                request_serializer=proto_dot_movie__pb2.SimilarMovieRequest.SerializeToString,
+                response_deserializer=proto_dot_movie__pb2.SimilarMovieResponse.FromString,
+                _registered_method=True)
+        self.GetSimilarMovies = channel.unary_unary(
+                '/movie.EmbeddingService/GetSimilarMovies',
+                request_serializer=proto_dot_movie__pb2.SimilarMoviesRequest.SerializeToString,
+                response_deserializer=proto_dot_movie__pb2.SimilarMoviesResponse.FromString,
+                _registered_method=True)
 
 
 class EmbeddingServiceServicer(object):
-    """Missing associated documentation comment in .proto file."""
+    """The service for movie embedding operations.
+    """
 
     def GetMovieEmbedding(self, request, context):
         """Generates an embedding and adds it to the vector database.
@@ -58,6 +70,20 @@ class EmbeddingServiceServicer(object):
 
     def AddMovieEmbedding(self, request, context):
         """Adds a movie embedding to the vector database.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetSimilarMovie(self, request, context):
+        """Returns the most similar movie given a movie ID.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetSimilarMovies(self, request, context):
+        """Returns multiple similar movies (e.g., top 5).
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -76,6 +102,16 @@ def add_EmbeddingServiceServicer_to_server(servicer, server):
                     request_deserializer=proto_dot_movie__pb2.AddMovieRequest.FromString,
                     response_serializer=proto_dot_movie__pb2.AddMovieResponse.SerializeToString,
             ),
+            'GetSimilarMovie': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetSimilarMovie,
+                    request_deserializer=proto_dot_movie__pb2.SimilarMovieRequest.FromString,
+                    response_serializer=proto_dot_movie__pb2.SimilarMovieResponse.SerializeToString,
+            ),
+            'GetSimilarMovies': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetSimilarMovies,
+                    request_deserializer=proto_dot_movie__pb2.SimilarMoviesRequest.FromString,
+                    response_serializer=proto_dot_movie__pb2.SimilarMoviesResponse.SerializeToString,
+            ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
             'movie.EmbeddingService', rpc_method_handlers)
@@ -85,7 +121,8 @@ def add_EmbeddingServiceServicer_to_server(servicer, server):
 
  # This class is part of an EXPERIMENTAL API.
 class EmbeddingService(object):
-    """Missing associated documentation comment in .proto file."""
+    """The service for movie embedding operations.
+    """
 
     @staticmethod
     def GetMovieEmbedding(request,
@@ -131,6 +168,60 @@ class EmbeddingService(object):
             '/movie.EmbeddingService/AddMovieEmbedding',
             proto_dot_movie__pb2.AddMovieRequest.SerializeToString,
             proto_dot_movie__pb2.AddMovieResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetSimilarMovie(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/movie.EmbeddingService/GetSimilarMovie',
+            proto_dot_movie__pb2.SimilarMovieRequest.SerializeToString,
+            proto_dot_movie__pb2.SimilarMovieResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetSimilarMovies(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/movie.EmbeddingService/GetSimilarMovies',
+            proto_dot_movie__pb2.SimilarMoviesRequest.SerializeToString,
+            proto_dot_movie__pb2.SimilarMoviesResponse.FromString,
             options,
             channel_credentials,
             insecure,

@@ -28,12 +28,15 @@ type KeywordResponse struct {
 	Keywords []Keyword `json:"keywords"`
 }
 
-// MovieSearchResponse represents the TMDb search movie API response
 type MovieSearchResponse struct {
 	Results []MovieResult `json:"results"`
 }
 
-// MovieResult represents an individual movie result
+type TopRatedResponse struct {
+	Results    []MovieResult `json:"results"`
+	TotalPages int           `json:"total_pages"`
+}
+
 type MovieResult struct {
 	ID          int    `json:"id"`
 	Title       string `json:"title"`
@@ -46,53 +49,30 @@ type Movie struct {
 	Keywords string `json:"keywords"`
 }
 
-// MovieID captures only the movie ID.
-type MovieID struct {
-	ID int `json:"id"`
-}
-
-// TopRatedResponse represents the JSON structure returned from the top-rated movies endpoint.
-type TopRatedResponse struct {
-	Page         int       `json:"page"`
-	Results      []MovieID `json:"results"`
-	TotalPages   int       `json:"total_pages"`
-	TotalResults int       `json:"total_results"`
-}
-
-// EmbeddingResponse represents the response from the Python API.
-type EmbeddingResponse struct {
-	Embedding []float64 `json:"embedding"`
-}
-
-// getMovieID fetches the movie ID from TMDb given a title
+// getMovieID performs a search for a movie title on TMDb, and returns the ID of the
+// first result. If no results are found, it returns an error.
 func getMovieID(title string) (int, error) {
 	baseURL := "https://api.themoviedb.org/3/search/movie"
-	query := url.QueryEscape(title) // Encode spaces correctly
-
-	// Construct the API request URL
+	query := url.QueryEscape(title)
 	apiURL := fmt.Sprintf("%s?api_key=%s&query=%s", baseURL, apiKey, query)
 
-	// Make the request
 	resp, err := http.Get(apiURL)
 	if err != nil {
 		return 0, err
 	}
 	defer resp.Body.Close()
 
-	// Read the response body
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return 0, err
 	}
 
-	// Parse JSON response
 	var searchResponse MovieSearchResponse
 	err = json.Unmarshal(body, &searchResponse)
 	if err != nil {
 		return 0, err
 	}
 
-	// If no results found, return error
 	if len(searchResponse.Results) == 0 {
 		return 0, fmt.Errorf("no results found for movie title: %s", title)
 	}
@@ -228,80 +208,95 @@ func buildIndex(client pb.EmbeddingServiceClient) error {
 	return nil
 }
 
+var (
+	grpcClient pb.EmbeddingServiceClient
+)
+
 func main() {
+	// Optional flag for your existing "build the index" operation
+	buildFlag := flag.Bool("build", false, "Build the index in the vector DB")
+	flag.Parse()
 
-	movie_id, err := getMovieID("Dune")
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	movie, err := getMovieInfo(movie_id)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Print the parsed struct
-	fmt.Printf("Title: %s\n", movie.Title)
-	fmt.Printf("Overview: %s\n", movie.Overview)
-	fmt.Printf("Keywords: %s\n", movie.Keywords)
-
+	// Connect to gRPC server
 	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("Failed to connect to gRPC server: %v", err)
 	}
 	defer conn.Close()
 
-	client := pb.NewEmbeddingServiceClient(conn)
+	grpcClient = pb.NewEmbeddingServiceClient(conn)
 
-	// Build the index
-	buildFlag := flag.Bool("build", false, "Build the index")
-	flag.Parse()
-
+	// Optionally build the index (if user runs with --build)
 	if *buildFlag {
-		err = buildIndex(client)
-		if err != nil {
+		if err := buildIndex(grpcClient); err != nil {
 			log.Fatal(err)
 		}
 	}
-	if err != nil {
-		log.Fatal(err)
+
+	// Set up HTTP routes
+	http.HandleFunc("/", handleIndex)
+	http.HandleFunc("/search", handleSearch)
+
+	fmt.Println("Web server running on http://localhost:8080/")
+	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+
+// handleIndex just shows a basic HTML form
+func handleIndex(w http.ResponseWriter, r *http.Request) {
+	html := `
+	<html>
+		<head><title>Movie Recommender</title></head>
+		<body>
+			<h1>Movie Recommender</h1>
+			<form action="/search" method="get">
+				<input type="text" name="q" placeholder="Enter a movie title" />
+				<input type="submit" value="Search" />
+			</form>
+		</body>
+	</html>
+	`
+	w.Write([]byte(html))
+}
+
+// handleSearch handles the /search route.
+//
+// It takes the user's query from the URL, looks up the first matching TMDb movie ID,
+// calls the gRPC server to get recommendations, and then builds a simple HTML page
+// with the results.
+func handleSearch(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query().Get("q")
+	if strings.TrimSpace(query) == "" {
+		http.Error(w, "Please provide a movie title.", http.StatusBadRequest)
+		return
 	}
 
-	similarResp, err := client.GetSimilarMovie(context.Background(), &pb.SimilarMovieRequest{
-		MovieId: int32(157336), // set queryMovieID to the desired movie ID
+	// Find the first matching TMDb movie ID
+	movieID, err := getMovieID(query)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error looking up movie: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	similarResp, err := grpcClient.GetSimilarMovies(context.Background(), &pb.SimilarMoviesRequest{
+		MovieId: int32(movieID),
+		Limit:   5, // we want 5 recommendations
 	})
 	if err != nil {
-		log.Fatalf("Error calling GetSimilarMovie: %v", err)
-	}
-	movie, err = getMovieInfo(int(similarResp.MovieId))
-
-	if err != nil {
-		log.Fatal(err)
+		http.Error(w, fmt.Sprintf("gRPC call failed: %v", err), http.StatusInternalServerError)
+		return
 	}
 
-	log.Printf("Most similar movie to %d is %d: %s", movie.Title, similarResp.MovieId, movie.Title)
+	// Build a simple results page
+	var sb strings.Builder
+	sb.WriteString("<html><head><title>Recommendations</title></head><body>")
+	sb.WriteString(fmt.Sprintf("<h2>Recommendations for '%s'</h2>", query))
+	sb.WriteString("<ul>")
+	for _, rec := range similarResp.Recommendations {
+		sb.WriteString(fmt.Sprintf("<li>%s (Movie ID: %d)</li>", rec.Title, rec.MovieId))
+	}
+	sb.WriteString("</ul>")
+	sb.WriteString(`<a href="/">Search again</a>`)
+	sb.WriteString("</body></html>")
 
-	// Optionally, if your service requires an explicit insertion into the vector database,
-	// 	you might call an AddMovieEmbedding RPC here. For example:
-
-	// conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
-	// if err != nil {
-	// 	log.Fatalf("Failed to connect to gRPC server: %v", err)
-	// }
-	// defer conn.Close()
-
-	// client := pb.NewEmbeddingServiceClient(conn)
-	// result, errora := client.GetMovieEmbedding(context.Background(), &pb.MovieRequest{
-	// 	Title:    "Dune",
-	// 	Overview: "A mythic and emotionally charged hero’s journey...",
-	// })
-
-	// if err != nil {
-	// 	log.Fatalf("Error calling gRPC: %v", errora)
-	// }
-
-	// log.Printf("Received embedding: %v", result.Embedding)
-
+	w.Write([]byte(sb.String()))
 }

@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x11proto/movie.proto\x12\x05movie\"S\n\x0cMovieRequest\x12\x10\n\x08movie_id\x18\x01 \x01(\x05\x12\r\n\x05title\x18\x02 \x01(\t\x12\x10\n\x08overview\x18\x03 \x01(\t\x12\x10\n\x08keywords\x18\x04 \x01(\t\"&\n\x11\x45mbeddingResponse\x12\x11\n\tembedding\x18\x01 \x03(\x02\"6\n\x0f\x41\x64\x64MovieRequest\x12\x10\n\x08movie_id\x18\x01 \x01(\x05\x12\x11\n\tembedding\x18\x02 \x03(\x02\"#\n\x10\x41\x64\x64MovieResponse\x12\x0f\n\x07message\x18\x01 \x01(\t2\x9c\x01\n\x10\x45mbeddingService\x12\x42\n\x11GetMovieEmbedding\x12\x13.movie.MovieRequest\x1a\x18.movie.EmbeddingResponse\x12\x44\n\x11\x41\x64\x64MovieEmbedding\x12\x16.movie.AddMovieRequest\x1a\x17.movie.AddMovieResponseB#Z!movie-recommender/go-client/pb;pbb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x11proto/movie.proto\x12\x05movie\"S\n\x0cMovieRequest\x12\x10\n\x08movie_id\x18\x01 \x01(\x05\x12\r\n\x05title\x18\x02 \x01(\t\x12\x10\n\x08overview\x18\x03 \x01(\t\x12\x10\n\x08keywords\x18\x04 \x01(\t\"&\n\x11\x45mbeddingResponse\x12\x11\n\tembedding\x18\x01 \x03(\x02\"6\n\x0f\x41\x64\x64MovieRequest\x12\x10\n\x08movie_id\x18\x01 \x01(\x05\x12\x11\n\tembedding\x18\x02 \x03(\x02\"#\n\x10\x41\x64\x64MovieResponse\x12\x0f\n\x07message\x18\x01 \x01(\t\"\'\n\x13SimilarMovieRequest\x12\x10\n\x08movie_id\x18\x01 \x01(\x05\"7\n\x14SimilarMovieResponse\x12\x10\n\x08movie_id\x18\x01 \x01(\x05\x12\r\n\x05title\x18\x02 \x01(\t\"7\n\x14SimilarMoviesRequest\x12\x10\n\x08movie_id\x18\x01 \x01(\x05\x12\r\n\x05limit\x18\x02 \x01(\x05\"M\n\x15SimilarMoviesResponse\x12\x34\n\x0frecommendations\x18\x01 \x03(\x0b\x32\x1b.movie.SimilarMovieResponse2\xb7\x02\n\x10\x45mbeddingService\x12\x42\n\x11GetMovieEmbedding\x12\x13.movie.MovieRequest\x1a\x18.movie.EmbeddingResponse\x12\x44\n\x11\x41\x64\x64MovieEmbedding\x12\x16.movie.AddMovieRequest\x1a\x17.movie.AddMovieResponse\x12J\n\x0fGetSimilarMovie\x12\x1a.movie.SimilarMovieRequest\x1a\x1b.movie.SimilarMovieResponse\x12M\n\x10GetSimilarMovies\x12\x1b.movie.SimilarMoviesRequest\x1a\x1c.movie.SimilarMoviesResponseB#Z!movie-recommender/go-client/pb;pbb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -40,6 +40,14 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_ADDMOVIEREQUEST']._serialized_end=207
   _globals['_ADDMOVIERESPONSE']._serialized_start=209
   _globals['_ADDMOVIERESPONSE']._serialized_end=244
-  _globals['_EMBEDDINGSERVICE']._serialized_start=247
-  _globals['_EMBEDDINGSERVICE']._serialized_end=403
+  _globals['_SIMILARMOVIEREQUEST']._serialized_start=246
+  _globals['_SIMILARMOVIEREQUEST']._serialized_end=285
+  _globals['_SIMILARMOVIERESPONSE']._serialized_start=287
+  _globals['_SIMILARMOVIERESPONSE']._serialized_end=342
+  _globals['_SIMILARMOVIESREQUEST']._serialized_start=344
+  _globals['_SIMILARMOVIESREQUEST']._serialized_end=399
+  _globals['_SIMILARMOVIESRESPONSE']._serialized_start=401
+  _globals['_SIMILARMOVIESRESPONSE']._serialized_end=478
+  _globals['_EMBEDDINGSERVICE']._serialized_start=481
+  _globals['_EMBEDDINGSERVICE']._serialized_end=792
 # @@protoc_insertion_point(module_scope)

@@ -22,6 +22,7 @@ const (
 	EmbeddingService_GetMovieEmbedding_FullMethodName = "/movie.EmbeddingService/GetMovieEmbedding"
 	EmbeddingService_AddMovieEmbedding_FullMethodName = "/movie.EmbeddingService/AddMovieEmbedding"
 	EmbeddingService_GetSimilarMovie_FullMethodName   = "/movie.EmbeddingService/GetSimilarMovie"
+	EmbeddingService_GetSimilarMovies_FullMethodName  = "/movie.EmbeddingService/GetSimilarMovies"
 )
 
 // EmbeddingServiceClient is the client API for EmbeddingService service.
@@ -34,8 +35,10 @@ type EmbeddingServiceClient interface {
 	GetMovieEmbedding(ctx context.Context, in *MovieRequest, opts ...grpc.CallOption) (*EmbeddingResponse, error)
 	// Adds a movie embedding to the vector database.
 	AddMovieEmbedding(ctx context.Context, in *AddMovieRequest, opts ...grpc.CallOption) (*AddMovieResponse, error)
-	// Returns the most similar movie (other than the query) given a movie ID.
+	// Returns the most similar movie given a movie ID.
 	GetSimilarMovie(ctx context.Context, in *SimilarMovieRequest, opts ...grpc.CallOption) (*SimilarMovieResponse, error)
+	// Returns multiple similar movies (e.g., top 5).
+	GetSimilarMovies(ctx context.Context, in *SimilarMoviesRequest, opts ...grpc.CallOption) (*SimilarMoviesResponse, error)
 }
 
 type embeddingServiceClient struct {
@@ -76,6 +79,16 @@ func (c *embeddingServiceClient) GetSimilarMovie(ctx context.Context, in *Simila
 	return out, nil
 }
 
+func (c *embeddingServiceClient) GetSimilarMovies(ctx context.Context, in *SimilarMoviesRequest, opts ...grpc.CallOption) (*SimilarMoviesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SimilarMoviesResponse)
+	err := c.cc.Invoke(ctx, EmbeddingService_GetSimilarMovies_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // EmbeddingServiceServer is the server API for EmbeddingService service.
 // All implementations must embed UnimplementedEmbeddingServiceServer
 // for forward compatibility.
@@ -86,8 +99,10 @@ type EmbeddingServiceServer interface {
 	GetMovieEmbedding(context.Context, *MovieRequest) (*EmbeddingResponse, error)
 	// Adds a movie embedding to the vector database.
 	AddMovieEmbedding(context.Context, *AddMovieRequest) (*AddMovieResponse, error)
-	// Returns the most similar movie (other than the query) given a movie ID.
+	// Returns the most similar movie given a movie ID.
 	GetSimilarMovie(context.Context, *SimilarMovieRequest) (*SimilarMovieResponse, error)
+	// Returns multiple similar movies (e.g., top 5).
+	GetSimilarMovies(context.Context, *SimilarMoviesRequest) (*SimilarMoviesResponse, error)
 	mustEmbedUnimplementedEmbeddingServiceServer()
 }
 
@@ -106,6 +121,9 @@ func (UnimplementedEmbeddingServiceServer) AddMovieEmbedding(context.Context, *A
 }
 func (UnimplementedEmbeddingServiceServer) GetSimilarMovie(context.Context, *SimilarMovieRequest) (*SimilarMovieResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSimilarMovie not implemented")
+}
+func (UnimplementedEmbeddingServiceServer) GetSimilarMovies(context.Context, *SimilarMoviesRequest) (*SimilarMoviesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSimilarMovies not implemented")
 }
 func (UnimplementedEmbeddingServiceServer) mustEmbedUnimplementedEmbeddingServiceServer() {}
 func (UnimplementedEmbeddingServiceServer) testEmbeddedByValue()                          {}
@@ -182,6 +200,24 @@ func _EmbeddingService_GetSimilarMovie_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _EmbeddingService_GetSimilarMovies_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SimilarMoviesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EmbeddingServiceServer).GetSimilarMovies(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: EmbeddingService_GetSimilarMovies_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EmbeddingServiceServer).GetSimilarMovies(ctx, req.(*SimilarMoviesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // EmbeddingService_ServiceDesc is the grpc.ServiceDesc for EmbeddingService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -200,6 +236,10 @@ var EmbeddingService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetSimilarMovie",
 			Handler:    _EmbeddingService_GetSimilarMovie_Handler,
+		},
+		{
+			MethodName: "GetSimilarMovies",
+			Handler:    _EmbeddingService_GetSimilarMovies_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
